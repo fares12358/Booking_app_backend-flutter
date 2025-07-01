@@ -21,7 +21,7 @@ connectDB();
 // Routes
 
 // Auth routes
-app.use('/api/auth', AuthRoutes);
+app.use(AuthRoutes);
 
 app.get('/', (req, res) => {
   res.send('Hello, Modular Backend!');
