@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import cors from 'cors';
 import AuthRoutes from './routes/AuthRoutes.js';
+import UserRoutes from './routes/UserRoutes.js';
 
 const PORT = process.env.PORT || 5000;
 const app = express();
@@ -22,6 +23,7 @@ connectDB();
 
 // Auth routes
 app.use(AuthRoutes);
+app.use(UserRoutes);
 
 app.get('/', (req, res) => {
   res.send('Hello, Modular Backend!');

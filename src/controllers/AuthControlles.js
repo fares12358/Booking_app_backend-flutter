@@ -141,10 +141,8 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-
 export const updateUser = async (req, res) => {
   const { id, username, password, newPassword } = req.body;
-
   try {
     // Get the single User document that contains all users
     const rootUserDoc = await User.findOne();
