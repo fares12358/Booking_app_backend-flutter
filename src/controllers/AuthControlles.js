@@ -27,15 +27,15 @@ export const loginUser = async (req, res) => {
     await doc.save();
 
     res.status(200).json({
-      statusCode:200,
+      statusCode: 200,
       message: 'Login successful',
       user: {
         id: user._id,
         name: user.name,
         token: user.accessToken,
         api: user.api,
-        role:user.role,
-        username:user.username,
+        role: user.role,
+        username: user.username,
       },
     });
   } catch (error) {
@@ -45,7 +45,6 @@ export const loginUser = async (req, res) => {
 
 export const registerUser = async (req, res) => {
   const { name, username, password, api } = req.body;
-
   try {
     let doc = await User.findOne(); // One document holds all users
     if (!doc) {
@@ -64,7 +63,7 @@ export const registerUser = async (req, res) => {
       username,
       password: hashedPassword,
       api,
-      role:"user",
+      role: "user",
       accessToken: generateAccessToken({ username }),
     };
 
@@ -72,12 +71,12 @@ export const registerUser = async (req, res) => {
     await doc.save();
 
     res.status(201).json({
-      statusCode:200,
+      statusCode: 200,
       message: 'Registration successful',
       user: {
         id: newUser._id,
         name: newUser.name,
-        username:newUser.username,
+        username: newUser.username,
         token: newUser.accessToken,
         api: newUser.api,
         role: newUser.role,
@@ -85,29 +84,6 @@ export const registerUser = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Registration error', error: error.message });
-  }
-};
-
-export const refreshTokenHandler = async (req, res) => {
-  const { refreshToken } = req.body;
-
-  if (!refreshToken) return res.status(401).json({ message: 'Refresh token missing' });
-
-  try {
-    const payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-    const user = await User.findById(payload.userId);
-
-    if (!user || user.refreshToken !== refreshToken)
-      return res.status(403).json({ message: 'Invalid refresh token' });
-
-    const newAccessToken = generateAccessToken(user);
-    user.accessToken = newAccessToken;
-    await user.save();
-
-    res.json({ accessToken: newAccessToken });
-
-  } catch (error) {
-    res.status(403).json({ message: 'Token invalid or expired' });
   }
 };
 
@@ -165,27 +141,36 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-export const logoutUser = async (req, res) => {
+
+export const updateUser = async (req, res) => {
+  const { id, username, password, newPassword } = req.body;
+
   try {
-    const { refreshToken } = req.body;
+    const user = await User.findById(id);
+    if (!user)
+      return res.status(404).json({ message: 'User not found' });
 
-    if (!refreshToken) {
-      return res.status(400).json({ message: 'Refresh token required' });
+    // Verify password only if user wants to change it
+    if (newPassword) {
+      if (!password)
+        return res.status(400).json({ message: 'Current password required' });
+
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch)
+        return res.status(401).json({ message: 'Invalid current password' });
+
+      user.password = await bcrypt.hash(newPassword, 10);
     }
 
-    // Assuming you store refresh tokens in DB per user
-    const user = await User.findOne({ refreshToken });
-    if (!user) {
-      return res.status(403).json({ message: 'Invalid refresh token' });
+    // Update username if provided
+    if (username) {
+      user.username = username;
     }
 
-    // Clear refresh token in DB
-    user.refreshToken = null;
     await user.save();
+    res.statusCode(200).json({ message: 'User updated successfully',user:{username:user.username,password:user.password} });
 
-    res.status(200).json({ message: 'Logout successful' });
   } catch (error) {
-    res.status(500).json({ message: 'Logout error', error: error.message });
+    res.status(500).json({ message: 'Update failed', error: error.message });
   }
 };
-
