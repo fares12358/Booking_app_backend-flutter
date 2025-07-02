@@ -35,6 +35,7 @@ export const loginUser = async (req, res) => {
         token: user.accessToken,
         api: user.api,
         role:user.role,
+        username:user.username,
       },
     });
   } catch (error) {
@@ -76,6 +77,7 @@ export const registerUser = async (req, res) => {
       user: {
         id: newUser._id,
         name: newUser.name,
+        username:newUser.username,
         token: newUser.accessToken,
         api: newUser.api,
         role: newUser.role,
