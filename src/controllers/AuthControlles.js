@@ -146,30 +146,39 @@ export const updateUser = async (req, res) => {
   const { id, username, password, newPassword } = req.body;
 
   try {
+    // Get the single User document that contains all users
     const rootUserDoc = await User.findOne();
     if (!rootUserDoc) return res.status(404).json({ message: 'User collection not found' });
+
+    // Find the specific user by _id in the array
     const user = rootUserDoc.users.find(u => u._id.toString() === id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Verify password only if user wants to change it
+    // Handle password change if requested
     if (newPassword) {
-      if (!password)
-        return res.status(400).json({ message: 'Current password required' });
+      if (!password) return res.status(400).json({ message: 'Current password required' });
 
       const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch)
-        return res.status(401).json({ message: 'Invalid current password' });
+      if (!isMatch) return res.status(401).json({ message: 'Invalid current password' });
 
       user.password = await bcrypt.hash(newPassword, 10);
     }
 
-    // Update username if provided
+    // Handle username update if provided
     if (username) {
       user.username = username;
     }
 
-    await user.save();
-    res.status(200).json({ message: 'User updated successfully',user:{username:user.username} });
+    await rootUserDoc.save();
+
+    res.status(200).json({
+      message: 'User updated successfully',
+      user: {
+        id: user._id,
+        username: user.username,
+        // Only include password if absolutely needed (not recommended)
+      }
+    });
 
   } catch (error) {
     res.status(500).json({ message: 'Update failed', error: error.message });
