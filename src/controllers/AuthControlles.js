@@ -146,9 +146,10 @@ export const updateUser = async (req, res) => {
   const { id, username, password, newPassword } = req.body;
 
   try {
-    const user = await User.findById(id);
-    if (!user)
-      return res.status(404).json({ message: 'User not found' });
+    const rootUserDoc = await User.findOne();
+    if (!rootUserDoc) return res.status(404).json({ message: 'User collection not found' });
+    const user = rootUserDoc.users.find(u => u._id.toString() === id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
     // Verify password only if user wants to change it
     if (newPassword) {
@@ -168,7 +169,7 @@ export const updateUser = async (req, res) => {
     }
 
     await user.save();
-    res.statusCode(200).json({ message: 'User updated successfully',user:{username:user.username,password:user.password} });
+    res.status(200).json({ message: 'User updated successfully',user:{username:user.username} });
 
   } catch (error) {
     res.status(500).json({ message: 'Update failed', error: error.message });
